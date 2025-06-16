@@ -1,0 +1,6 @@
+@echo off
+echo Running SendGrid troubleshooter...
+echo Installing requirements...
+pip install requests
+python sendgrid_troubleshooter.py
+pause

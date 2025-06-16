@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="order-container animate__animated animate__fadeIn">
+    <h1 class="order-title">Order Sheep</h1>
+    
+    {% if success %}
+    <div class="alert alert-success animate__animated animate__fadeIn">
+        <h4><i class="fa-solid fa-check-circle"></i> Order Successful!</h4>
+        <p>Thank you for your order. We will contact you soon to confirm the details.</p>
+        {% if order %}
+        <p><strong>Order ID:</strong> #{{ order.id }}</p>
+        {% endif %}
+        <a href="/" class="btn btn-primary mt-3">Return to Home</a>
+    </div>
+    {% else %}
+    
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} animate__animated animate__fadeIn">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="order-card">
+        <div class="card-header">
+            <i class="fa-solid fa-sheep"></i> Book your sheep today
+        </div>
+        <div class="card-body">            <form method="post" class="order-form animate__animated animate__fadeInUp">
+                {% csrf_token %}
+                <div class="form-group full-width">
+                    <label for="name">Full Name</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="name" name="name" class="form-control" required>
+                    </div>
+                </div>
+                  <div class="form-row equal-fields">
+                    <div class="form-group col-md-6">
+                        <label for="email">Email Address</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope"></i>
+                            <input type="email" id="email" name="email" class="form-control" placeholder="your@email.com" required>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="phone">Phone Number</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone"></i>
+                            <input type="text" id="phone" name="phone" class="form-control" placeholder="e.g. 9876543210" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row equal-fields">
+                    <div class="form-group col-md-6">
+                        <label for="number_of_sheep">Number of Sheep</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-hashtag"></i>
+                            <input type="number" id="number_of_sheep" name="number_of_sheep" min="1" placeholder="e.g. 5" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="weight">Preferred Weight Range</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-weight-scale"></i>
+                            <input type="text" id="weight" name="weight" class="form-control" placeholder="e.g. 20-25 kg" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="cost">Budget (INR)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-rupee-sign"></i>
+                        <input type="number" id="cost" name="cost" min="0" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="requirements">Special Requirements</label>
+                    <div class="input-wrapper textarea-wrapper">
+                        <i class="fa-solid fa-list-check"></i>
+                        <textarea id="requirements" name="requirements" rows="4" class="form-control"></textarea>
+                    </div>
+                </div><button type="submit" class="btn btn-primary btn-block order-submit">
+                    <span class="btn-text">Book Now</span>
+                    <span class="btn-icon">🐑</span>
+                </button>
+                <p class="form-footer">We'll contact you within 24 hours to confirm your order</p>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Add box-sizing globally for form elements */
+    .order-form * {
+        box-sizing: border-box;
+    }
+      .order-container {
+        max-width: 1000px;
+        width: 100%;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    
+    .order-title {
+        text-align: center;
+        color: var(--primary-color);
+        margin-bottom: 2rem;
+        position: relative;
+        font-size: 2rem;
+    }
+    
+    .order-title:after {
+        content: '';
+        position: absolute;
+        width: 80px;
+        height: 4px;
+        background: var(--accent-color);
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+      .order-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: 0 10px 30px rgba(46, 139, 87, 0.1);
+        overflow: hidden;
+        border: 1px solid rgba(46, 139, 87, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        width: 100%;
+    }
+      .order-card:hover {
+        box-shadow: 0 15px 40px rgba(46, 139, 87, 0.15);
+        transform: translateY(-5px);
+    }
+    
+    .card-header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 1rem 2.5rem;
+        font-size: 1.1rem;
+        font-weight: 500;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .card-header i {
+        margin-right: 10px;
+        color: var(--accent-color);
+    }
+      .card-body {
+        padding: 2.5rem 4rem;
+        background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+    }.order-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        width: 100%;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+        width: 100%;
+    }
+      .full-width {
+        width: 100%;
+    }
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -0.5rem 1rem -0.5rem;
+        width: 100%;
+    }
+    
+    .form-row.equal-fields {
+        display: flex;
+        justify-content: space-between;
+    }
+      .form-row .form-group {
+        flex: 1;
+        padding: 0 0.7rem;
+        min-width: 130%;
+        margin-bottom: 0;
+    }
+    
+    .col-md-6 {
+        flex: 0 0 calc(50% - 1rem);
+        max-width: calc(50% - 1rem);
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--primary-color);
+        font-size: 0.9rem;
+    }    .form-control {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 1px solid rgba(46, 139, 87, 0.2);
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        background-color: #fcfcfc;
+        display: block;
+        box-sizing: border-box;
+        min-width: 100%;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(46, 139, 87, 0.15);
+        outline: none;
+        background-color: white;
+    }
+    
+    .form-control::placeholder {
+        color: #aaa;
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }.order-submit {
+        background: linear-gradient(135deg, var(--primary-color), #1d5e3a);
+        color: white;
+        border: none;
+        padding: 0.9rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 1rem;
+        box-shadow: 0 4px 10px rgba(46, 139, 87, 0.2);
+        letter-spacing: 0.5px;
+    }
+    
+    .order-submit:hover {
+        background: linear-gradient(135deg, #246b45, #194e30);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(46, 139, 87, 0.3);
+    }
+    
+    .order-submit:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 5px rgba(46, 139, 87, 0.2);
+    }
+    
+    .btn-icon {
+        display: inline-block;
+        transform: scale(0.8);
+        transition: transform 0.3s ease;
+    }
+    
+    .order-submit:hover .btn-icon {
+        transform: scale(1.2);
+    }    @media (max-width: 768px) {
+        .form-row,
+        .form-row.equal-fields {
+            flex-direction: column;
+            margin: 0 0 1rem 0;
+        }
+        
+        .form-row .form-group,
+        .col-md-6 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            width: 100%;
+            margin-bottom: 0.8rem;
+            padding: 0;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .order-title {
+            font-size: 1.7rem;
+        }
+        
+        .form-control {
+            font-size: 0.9rem;
+            padding: 0.6rem 0.8rem;
+            width: 100%;
+            display: block;
+        }
+        
+        .input-wrapper .form-control {
+            padding-left: 35px;
+            width: 100%;
+            display: block;
+        }
+        
+        .label {
+            font-size: 0.85rem;
+            display: block;
+            width: 100%;
+        }
+        
+        .card-header {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+        }
+        
+        .order-container {
+            padding: 0 0.5rem;
+        }
+    }
+      /* Small screens */
+    @media (max-width: 480px) {
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .order-title {
+            font-size: 1.5rem;
+        }
+        
+        .form-control {
+            padding: 0.5rem 0.7rem;
+            width: 100%;
+        }
+        
+        .input-wrapper, 
+        .form-group,
+        .form-control {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .card-header {
+            padding: 0.8rem 1rem;
+        }
+        
+        .order-submit {
+            padding: 0.7rem;
+        }
+    }
+    
+    /* Extra small screens */
+    @media (max-width: 320px) {
+        .card-body {
+            padding: 0.8rem;
+        }
+        
+        .order-title {
+            font-size: 1.3rem;
+        }
+        
+        label {
+            font-size: 0.8rem;
+        }
+        
+        .form-control {
+            font-size: 0.8rem;
+        }
+    }
+      .input-wrapper {
+        position: relative;
+        width: 100%;
+        display: block;
+    }
+      
+    .input-wrapper i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary-color);
+        opacity: 0.6;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    
+    .textarea-wrapper i {
+        top: 15px;
+        transform: none;
+    }
+    
+    .input-wrapper:focus-within i {
+        opacity: 1;
+        color: var(--accent-color);
+    }
+    
+    .input-wrapper .form-control {
+        padding-left: 40px;
+        width: 100%;
+        box-sizing: border-box;
+        display: block;
+    }
+    
+    .textarea-wrapper .form-control {
+        padding-left: 40px;
+        width: 100%;
+        box-sizing: border-box;
+        display: block;
+    }
+    
+    /* Style for field focus indication */
+    .form-group:focus-within label {
+        color: var(--accent-color);
+    }
+    
+    /* Form footer */
+    .form-footer {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.85rem;
+        color: #666;
+        font-style: italic;
+    }
+</style>
+{% endblock %}

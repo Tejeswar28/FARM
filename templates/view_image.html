@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+{% block content %}
+{% csrf_token %}
+<div class="lightbox-container animate__animated animate__fadeIn">
+    <a href="{% url 'gallery_home' %}" class="back-button">
+        <i class="fa-solid fa-arrow-left"></i> Back to Gallery
+    </a>
+    
+    <div class="lightbox-image-container">
+        <div class="image-details">
+            <h2>{{ image.title }}</h2>
+            {% if image.description %}
+            <p class="image-description">{{ image.description }}</p>
+            {% endif %}
+            <p class="image-metadata">
+                <span><i class="fa-solid fa-calendar"></i> {{ image.uploaded_at|date:"F j, Y" }}</span>
+                {% if image.original_width and image.original_height %}
+                <span><i class="fa-solid fa-image"></i> {{ image.original_width }}×{{ image.original_height }}</span>
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="lightbox-image">
+            <img src="{{ image.file.url }}" alt="{{ image.title }}" 
+                 data-width="{{ image.original_width }}" 
+                 data-height="{{ image.original_height }}" />
+        </div>
+          <div class="lightbox-controls">
+            <a href="{{ image.file.url }}" download class="download-button">
+                <i class="fa-solid fa-download"></i> Download Original
+            </a>
+            {% if user.is_authenticated and user.userprofile.role == 'admin' or user.is_superuser %}
+            <a href="javascript:void(0);" class="delete-button" data-id="{{ image.id }}" data-type="{{ image.type }}">
+                <i class="fa-solid fa-trash"></i> Delete
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this image? This action cannot be undone.</p>
+        <div class="modal-buttons">
+            <button id="cancelDelete" class="btn cancel-btn">Cancel</button>
+            <button id="confirmDelete" class="btn delete-confirm-btn">Delete</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .lightbox-container {
+        min-height: calc(100vh - 180px);
+        padding: 2em;
+        background-color: rgba(255, 255, 255, 0.95);
+        display: flex;
+        flex-direction: column;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+    
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+        padding: 0.6em 1.2em;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: 500;
+        margin-bottom: 2em;
+        align-self: flex-start;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .back-button:hover {
+        background: #246b45;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .lightbox-image-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        overflow: hidden;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+    
+    .image-details {
+        width: 100%;
+        padding: 1.5em;
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .image-details h2 {
+        margin: 0 0 0.5em;
+        font-size: 1.8em;
+    }
+    
+    .image-description {
+        margin-bottom: 1em;
+        font-size: 1.1em;
+        line-height: 1.5;
+    }
+    
+    .image-metadata {
+        display: flex;
+        gap: 1.5em;
+        font-size: 0.9em;
+        opacity: 0.9;
+    }
+    
+    .image-metadata i {
+        margin-right: 0.4em;
+    }
+    
+    .lightbox-image {
+        width: 100%;
+        text-align: center;
+        padding: 2em;
+        background: #f8f8f8;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+    
+    .lightbox-image img {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .lightbox-controls {
+        width: 100%;
+        padding: 1em 2em;
+        background: white;
+        display: flex;
+        justify-content: center;
+        border-top: 1px solid #eee;
+    }
+    
+    .download-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+        padding: 0.8em 1.5em;
+        background: var(--accent-color);
+        color: var(--primary-color);
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .download-button:hover {
+        background: #d0a73d;
+        transform: translateY(-2px);
+    }
+    
+    /* Delete button styles */
+    .delete-button {
+        background-color: #ff4d4d;
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color 0.3s;
+        margin-left: 10px;
+    }
+    
+    .delete-button:hover {
+        background-color: #ff3333;
+        text-decoration: none;
+        color: white;
+    }
+    
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        max-width: 500px;
+        position: relative;
+    }
+    
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .close:hover {
+        color: black;
+    }
+    
+    .modal h2 {
+        margin-top: 0;
+        color: #333;
+    }
+    
+    .modal-buttons {
+        margin-top: 20px;
+        text-align: right;
+    }
+    
+    .btn {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+    
+    .cancel-btn {
+        background-color: #f2f2f2;
+        color: #333;
+    }
+    
+    .delete-confirm-btn {
+        background-color: #ff4d4d;
+        color: white;
+    }
+    
+    .delete-confirm-btn:hover {
+        background-color: #ff3333;
+    }
+    
+    .delete-confirm-btn:disabled {
+        background-color: #ff9999;
+        cursor: not-allowed;
+    }
+    
+    /* Notification styles */
+    .notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 5px;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 1001;
+        font-weight: 500;
+        display: none;
+        animation: slideIn 0.3s forwards;
+    }
+    
+    .notification.success {
+        background-color: #4caf50;
+    }
+    
+    .notification.error {
+        background-color: #f44336;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateY(100px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .lightbox-container {
+            padding: 1em;
+        }
+        
+        .image-details h2 {
+            font-size: 1.5em;
+        }
+        
+        .lightbox-image {
+            padding: 1em;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get image element
+    const img = document.querySelector('.lightbox-image img');
+    
+    // Add zoom functionality
+    if (img) {
+        let isZoomed = false;
+        
+        img.addEventListener('click', function() {
+            if (!isZoomed) {
+                // Zoom in
+                this.style.maxHeight = 'none';
+                this.style.cursor = 'zoom-out';
+                isZoomed = true;
+            } else {
+                // Zoom out
+                this.style.maxHeight = '80vh';
+                this.style.cursor = 'zoom-in';
+                isZoomed = false;
+            }
+        });
+        
+        // Set initial cursor
+        img.style.cursor = 'zoom-in';
+    }
+    
+    // Get modal elements
+    const modal = document.getElementById('deleteModal');
+    const closeBtn = modal.querySelector('.close');
+    const cancelBtn = document.getElementById('cancelDelete');
+    const confirmBtn = document.getElementById('confirmDelete');
+    const deleteBtn = document.querySelector('.delete-button');
+    
+    if (!deleteBtn) return; // Exit if no delete button (non-admin view)
+    
+    // Add event listeners to delete button
+    deleteBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Show modal
+        modal.style.display = 'block';
+    });
+    
+    // Close modal when clicking X or Cancel
+    closeBtn.addEventListener('click', () => modal.style.display = 'none');
+    cancelBtn.addEventListener('click', () => modal.style.display = 'none');
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Handle delete confirmation
+    confirmBtn.addEventListener('click', function() {
+        // Show loading state
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Deleting...';
+        
+        // Get item ID from delete button
+        const itemId = deleteBtn.dataset.id;
+        
+        // Send delete request
+        fetch(`/gallery/delete/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Redirect back to gallery
+                window.location.href = '/gallery/';
+            } else {
+                // Show error
+                showNotification('Error: ' + (data.error || 'Failed to delete'), 'error');
+                modal.style.display = 'none';
+                
+                // Reset button
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Delete';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error: Failed to delete. Please try again.', 'error');
+            modal.style.display = 'none';
+            
+            // Reset button
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Delete';
+        });
+    });
+    
+    // Helper to get CSRF token
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Notification function
+    function showNotification(message, type = 'success') {
+        // Create notification element if it doesn't exist
+        let notification = document.getElementById('notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'notification';
+            document.body.appendChild(notification);
+        }
+        
+        // Set content and class
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        
+        // Show notification
+        notification.style.display = 'block';
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

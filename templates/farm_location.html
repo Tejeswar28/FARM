@@ -1,0 +1,502 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    #map {
+        height: 500px;
+        width: 100%;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        position: relative;
+        z-index: 1;
+    }
+    .map-container {
+        padding: 2em;
+        max-width: 1000px;
+        margin: 0 auto;
+        position: relative;
+    }
+    .map-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 50px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-right: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .map-btn:hover {
+        background: #246b45;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        color: white;
+    }    #distance {
+        padding: 20px;
+        background: #f5f5f5;
+        border-radius: 10px;
+        margin-top: 20px;
+        font-size: 18px;
+        text-align: center;
+        display: none;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    #distance.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    .distance-details {
+        margin: 15px 0;
+        text-align: left;
+    }
+    .distance-value {
+        font-weight: bold;
+        color: #2e8b57;
+        background: #e8f5e9;
+        padding: 10px;
+        border-radius: 8px;
+        margin: 15px 0;
+        text-align: center;
+    }
+    .error-message {
+        color: #721c24;
+        background-color: #f8d7da;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    .calculating {
+        color: #0c5460;
+        background-color: #d1ecf1;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    .coordinates {
+        font-size: 14px;
+        color: #666;
+        margin-top: 5px;
+    }
+    .map-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 20px 0;
+        justify-content: center;
+    }
+    .location-title {
+        text-align: center;
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .location-title:after {
+        content: '';
+        position: absolute;
+        width: 80px;
+        height: 4px;
+        background: var(--accent-color);
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .farm-details {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        margin-top: 30px;
+    }
+    .farm-details h3 {
+        color: var(--primary-color);
+        margin-top: 0;
+    }    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .map-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: var(--primary-color);
+        z-index: 0;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+    }
+    
+    .map-loading .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(46, 139, 87, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        margin: 0 auto 10px;
+        animation: spin 1s linear infinite;
+    }
+    
+    .static-map-container {
+        position: relative;
+        margin: 20px 0;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        display: none;
+    }
+    
+    .static-map-image {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+    
+    .static-map-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(46, 139, 87, 0.8);
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-size: 16px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="map-container animate__animated animate__fadeIn">    <h1 class="location-title">Farm Location</h1>
+    <p>Find our sheep farm on the map below. Located at Pasamvaripalli, Penchipad Road in Annamayya District, Andhra Pradesh, our farm is easily accessible and offers a peaceful rural setting.</p>    <div id="map">
+        <div class="map-loading">
+            <div class="loading-spinner"></div>
+            <p>Loading map...</p>
+        </div>
+    </div>
+    
+    <!-- Static Map Image Fallback -->
+    <div class="static-map-container" id="staticMap">
+        <img src="https://a.tile.openstreetmap.org/13/6132/3926.png" alt="Shuddhi Farms Location Map" class="static-map-image">
+        <div class="static-map-overlay">
+            <p><i class="fa-solid fa-map-marker-alt"></i> Shuddhi Farms is located at Pasamvaripalli, Penchipad Road, Annamayya District, Andhra Pradesh.</p>
+        </div>
+    </div>
+    
+    <div class="map-actions">
+        <a href="https://maps.app.goo.gl/ggDn9supWuUJQ7wQ8" target="_blank" class="map-btn">
+            <i class="fa-solid fa-location-arrow"></i> Open in Google Maps
+        </a>
+        <button onclick="getDistance()" class="map-btn">
+            <i class="fa-solid fa-route"></i> Calculate Distance
+        </button>
+    </div>    
+    <div id="distance"></div>      <div class="farm-details">        
+        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+            <!-- Farm Location Logo -->
+            <svg width="50" height="50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="margin-right: 10px;">
+                <circle cx="256" cy="256" r="200" fill="#2e8b57" />
+                <g fill="#ffd700" transform="translate(256 256) scale(0.65) translate(-256 -256)">
+                    <path d="M256,100 C270,150 300,180 340,190 C300,200 270,230 256,280 C242,230 212,200 172,190 C212,180 242,150 256,100 Z" />
+                </g>
+                <!-- Location Pin -->
+                <circle cx="256" cy="256" r="40" fill="#ff5252" />
+                <path d="M256,210 L220,290 L256,270 L292,290 Z" fill="#ff5252" />
+            </svg>
+            <h3 class="farm-name-hero">Shuddhi Farms</h3>
+        </div>
+        <p>Address: Pasamvaripalli, Penchipad Road, Annamayya District - 517325, Andhra Pradesh</p>
+        <p class="coordinates">Farm Coordinates: <span id="farm-coords">13.4777950, 78.4458150</span></p>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=13.4777950,78.4458150" target="_blank" class="map-btn">
+            <i class="fa-solid fa-directions"></i> Get Directions
+        </a>
+    </div>
+</div>
+
+<script>
+// Farm coordinates
+var farmLat = 13.4777950;
+var farmLng = 78.4458150;
+var map;
+var farmMarker;
+var isMapLoaded = false;
+
+// Try to initialize the map
+function initMap() {
+    try {
+        // Initialize the map
+        map = L.map('map', {
+            center: [farmLat, farmLng],
+            zoom: 13,
+            zoomControl: true,
+            scrollWheelZoom: true,
+            dragging: true,
+            tap: true
+        });
+        
+        // Add multiple tile layer providers for redundancy
+        var mainLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Add a backup layer if the main one fails
+        var backupLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        });
+        
+        // Add another backup layer
+        var secondBackupLayer = L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+        
+        // Create a farm icon
+        var farmIcon = L.divIcon({
+            className: 'custom-farm-marker',
+            html: `<div style="background-color:#2e8b57; width:30px; height:30px; border-radius:50%; position:relative; border:3px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);">
+                    <div style="background-color:#ffd700; width:12px; height:12px; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);"></div>
+                  </div>
+                  <div style="position:absolute; bottom:-5px; left:50%; transform:translateX(-50%); border-left:8px solid transparent; border-right:8px solid transparent; border-top:10px solid #2e8b57;"></div>`,
+            iconSize: [30, 42],
+            iconAnchor: [15, 42]
+        });
+        
+        // Add farm marker
+        farmMarker = L.marker([farmLat, farmLng], {
+            icon: farmIcon,
+            title: 'Shuddhi Farms'
+        }).addTo(map);
+        
+        // Add popup
+        farmMarker.bindPopup(`
+            <div style="text-align:center; min-width:200px;">
+                <h3 style="color:#2e8b57; margin:5px 0; font-size:16px;">✨ Shuddhi Farms ✨</h3>
+                <p style="margin:5px 0; font-size:13px;">Pasamvaripalli, Penchipad Road, <br>Annamayya District - 517325, <br>Andhra Pradesh</p>
+                <p style="margin:5px 0; font-size:12px;"><strong>Contact:</strong> +91-7892861310</p>
+                <p style="margin:5px 0; font-size:11px; color:#666;">Coordinates: ${farmLat}, ${farmLng}</p>
+            </div>
+        `, {
+            maxWidth: 300,
+            closeButton: true
+        }).openPopup();
+        
+        // Add layer controls
+        var baseLayers = {
+            "OpenStreetMap": mainLayer,
+            "CartoDB Light": backupLayer,
+            "OpenStreetMap DE": secondBackupLayer
+        };
+        
+        L.control.layers(baseLayers, null, {
+            position: 'topright',
+            collapsed: true
+        }).addTo(map);
+        
+        // Set map loaded flag
+        isMapLoaded = true;
+        
+        // Listen for tile load errors and switch providers if needed
+        mainLayer.on('tileerror', function(e) {
+            console.warn("Tile load error from main provider, switching to backup");
+            map.removeLayer(mainLayer);
+            backupLayer.addTo(map);
+        });
+        
+        backupLayer.on('tileerror', function(e) {
+            console.warn("Tile load error from backup provider, switching to second backup");
+            map.removeLayer(backupLayer);
+            secondBackupLayer.addTo(map);
+        });
+        
+        secondBackupLayer.on('tileerror', function(e) {
+            console.error("All tile providers failed");
+            showStaticMap();
+        });
+        
+        // Hide loading indicator after tiles load
+        map.on('load', function() {
+            document.querySelector('.map-loading').style.display = 'none';
+        });
+        
+        // Add scale control
+        L.control.scale({
+            imperial: false,
+            metric: true,
+            position: 'bottomleft'
+        }).addTo(map);
+        
+        return true;
+    } catch (error) {
+        console.error("Error initializing map:", error);
+        showStaticMap();
+        return false;
+    }
+}
+
+// Function to show static map if interactive map fails
+function showStaticMap() {
+    document.getElementById('map').style.display = 'none';
+    document.getElementById('staticMap').style.display = 'block';
+}
+
+// Check if map loads correctly
+function checkMapLoaded() {
+    setTimeout(function() {
+        if (!isMapLoaded || !map || map._loaded === false) {
+            console.warn("Map did not load properly");
+            showStaticMap();
+        } else {
+            document.querySelector('.map-loading').style.display = 'none';
+        }
+    }, 3000);
+}
+
+// Function to calculate distance
+function getDistance() {
+    var distanceDiv = document.getElementById('distance');
+    distanceDiv.innerHTML = '<div class="calculating"><i class="fa-solid fa-spinner fa-spin"></i> Calculating distance...</div>';
+    distanceDiv.classList.add('active');
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            try {
+                var userLat = position.coords.latitude;
+                var userLng = position.coords.longitude;
+                
+                if (!isMapLoaded) {
+                    // If map failed to load, still calculate distance
+                    calculateHaversineDistance(userLat, userLng, farmLat, farmLng, distanceDiv);
+                    return;
+                }
+                
+                // Clear any existing markers except the farm marker
+                map.eachLayer(function(layer) {
+                    if (layer instanceof L.Marker && layer !== farmMarker) {
+                        map.removeLayer(layer);
+                    }
+                    if (layer instanceof L.Polyline) {
+                        map.removeLayer(layer);
+                    }
+                });
+                
+                // Create a user location icon
+                var userIcon = L.divIcon({
+                    className: 'custom-user-marker',
+                    html: `<div style="background-color:#4285F4; width:20px; height:20px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+                
+                // Add user location marker
+                var userMarker = L.marker([userLat, userLng], {
+                    icon: userIcon,
+                    title: 'Your Location'
+                }).addTo(map);
+                
+                userMarker.bindPopup("<strong>Your Location</strong>").openPopup();
+                
+                // Draw line between points
+                var line = L.polyline([
+                    [userLat, userLng],
+                    [farmLat, farmLng]
+                ], {
+                    color: '#2e8b57',
+                    weight: 4,
+                    opacity: 0.7,
+                    dashArray: '10, 10'
+                }).addTo(map);
+                
+                // Fit map to show both points
+                map.fitBounds(line.getBounds(), {padding: [50, 50]});
+                
+                // Calculate distance using Haversine formula
+                calculateHaversineDistance(userLat, userLng, farmLat, farmLng, distanceDiv);
+                
+            } catch (error) {
+                console.error("Error calculating distance:", error);
+                distanceDiv.innerHTML = "<div class='error-message'><i class='fa-solid fa-exclamation-triangle'></i> Error calculating distance. Please try again.</div>";
+            }
+        }, function(error) {
+            handleGeolocationError(error, distanceDiv);
+        });
+    } else {
+        distanceDiv.innerHTML = "<div class='error-message'><i class='fa-solid fa-exclamation-triangle'></i> Geolocation is not supported by this browser. Please try using a different browser.</div>";
+    }
+}
+
+// Helper function to calculate distance
+function calculateHaversineDistance(userLat, userLng, farmLat, farmLng, distanceDiv) {
+    // Calculate distance in kilometers using the Haversine formula
+    var R = 6371; // Radius of the earth in km
+    var dLat = deg2rad(farmLat - userLat);
+    var dLon = deg2rad(farmLng - userLng); 
+    var a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(userLat)) * Math.cos(deg2rad(farmLat)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2); 
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var distanceInKm = R * c; // Distance in km
+    
+    // Round to 2 decimal places
+    distanceInKm = Math.round(distanceInKm * 100) / 100;
+    var distanceInMiles = Math.round(distanceInKm * 0.621371 * 100) / 100;
+    
+    // Create a detailed result
+    distanceDiv.innerHTML = `
+        <h3><i class="fa-solid fa-map-marker-alt"></i> Distance Information</h3>
+        <div class="distance-details">
+            <p><strong>From:</strong> Your current location (${userLat.toFixed(6)}, ${userLng.toFixed(6)})</p>
+            <p><strong>To:</strong> <span style="color:#2e8b57;font-weight:bold;text-shadow:1px 1px 2px rgba(0,0,0,0.1);">✨ Shuddhi Farms ✨</span> (${farmLat}, ${farmLng})</p>
+            <div class="distance-value" style="font-size: 24px; margin: 15px 0; padding: 10px; background: #e8f5e9; border-radius: 8px; color: #2e8b57;">
+                <strong>Distance:</strong> ${distanceInKm} kilometers
+            </div>
+            <p><strong>Distance in miles:</strong> ${distanceInMiles} miles</p>
+            <p><em>This is the direct distance as the crow flies. Actual driving distance may be longer.</em></p>
+        </div>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${farmLat},${farmLng}&origin=${userLat},${userLng}" target="_blank" class="map-btn">
+            <i class="fa-solid fa-directions"></i> Get Driving Directions
+        </a>
+    `;
+}
+
+// Helper function for geolocation errors
+function handleGeolocationError(error, distanceDiv) {
+    switch(error.code) {
+        case error.PERMISSION_DENIED:
+            distanceDiv.innerHTML = "<div class='error-message'><i class='fa-solid fa-exclamation-triangle'></i> Location access denied. Please enable location services in your browser settings.</div>";
+            break;
+        case error.POSITION_UNAVAILABLE:
+            distanceDiv.innerHTML = "<div class='error-message'><i class='fa-solid fa-exclamation-triangle'></i> Location information is unavailable. Please try again later.</div>";
+            break;
+        case error.TIMEOUT:
+            distanceDiv.innerHTML = "<div class='error-message'><i class='fa-solid fa-exclamation-triangle'></i> Location request timed out. Please try again.</div>";
+            break;
+        default:
+            distanceDiv.innerHTML = "<div class='error-message'><i class='fa-solid fa-exclamation-triangle'></i> An unknown error occurred. Please try again later.</div>";
+            break;
+    }
+}
+
+// Helper function for Haversine formula
+function deg2rad(deg) {
+    return deg * (Math.PI/180);
+}
+
+// Initialize map when page loads
+window.addEventListener('load', function() {
+    initMap();
+    checkMapLoaded();
+});
+</script>
+{% endblock %}

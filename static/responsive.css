@@ -1,0 +1,180 @@
+/* Responsive Improvements for Shuddhi Farms Website */
+
+/* Mobile-first responsive meta tag is already in base.html */
+/* Ensures proper scaling on all devices */
+
+/* Additional Responsive Styles */
+
+/* Small Phones (320px - 480px) */
+@media (max-width: 480px) {
+    /* Global adjustments */
+    body {
+        font-size: 14px;
+    }
+    
+    .site-main {
+        padding: 0.5rem;
+    }
+    
+    /* Reduce paddings and margins */
+    .container, 
+    .section {
+        padding: 1rem 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Adjust headings */
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    h2 {
+        font-size: 1.3rem;
+    }
+    
+    h3 {
+        font-size: 1.1rem;
+    }
+    
+    /* Footer adjustments */
+    .footer-container {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem 0.5rem;
+    }
+    
+    .footer-info, 
+    .footer-social, 
+    .footer-copyright {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .social-links {
+        justify-content: center;
+    }
+    
+    /* Button adjustments */
+    .btn {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Tablets (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    /* Global adjustments */
+    body {
+        font-size: 15px;
+    }
+    
+    .site-main {
+        padding: 0.75rem;
+    }
+    
+    /* Container adjustments */
+    .container, 
+    .section {
+        padding: 1.5rem 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    /* Adjust headings */
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3 {
+        font-size: 1.2rem;
+    }
+    
+    /* Footer adjustments */
+    .footer-container {
+        flex-wrap: wrap;
+        padding: 2rem 1rem;
+    }
+    
+    .footer-info, 
+    .footer-social {
+        width: 50%;
+        margin-bottom: 1.5rem;
+    }
+    
+    .footer-copyright {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* Small Laptops (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    /* Container adjustments */
+    .container, 
+    .section {
+        padding: 2rem 1.5rem;
+    }
+    
+    /* Footer adjustments */
+    .footer-container {
+        padding: 2.5rem 1.5rem;
+    }
+}
+
+/* Fix for images to be responsive */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Fix for tables to be responsive */
+table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+/* Fix for embedded content like iframes */
+.responsive-embed {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.responsive-embed iframe,
+.responsive-embed object,
+.responsive-embed embed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Touch target size for mobile */
+button, 
+.btn, 
+a.nav-link, 
+input[type="button"], 
+input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Ensure form elements are responsive */
+input, 
+select, 
+textarea {
+    max-width: 100%;
+}
+
+/* Ensure content doesn't overflow on small screens */
+pre, code {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
